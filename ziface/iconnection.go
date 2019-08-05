@@ -15,3 +15,6 @@ type IConnection interface {
 	//获取远程客户端地址信息
 	RemoteAddr() net.Addr
 }
+
+//定义一个统一处理链接业务的接口 int表示读到的大小
+type HandFunc func(*net.TCPConn, []byte, int) error
