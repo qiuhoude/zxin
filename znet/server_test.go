@@ -23,10 +23,9 @@ func ClientTest() {
 		fmt.Println("client start err, exit!")
 		return
 	}
-
+	dp := NewDataPack()
 	for {
-		dp := NewDataPack()
-		msg, _ := dp.Pack(NewMsgPackage(0, []byte("Zinx V0.5 Client Test Message")))
+		msg, _ := dp.Pack(NewMsgPackage(1, []byte("Zinx V0.6 Client Test Message")))
 		_, err := conn.Write(msg)
 		if err != nil {
 			fmt.Println("write error err ", err)
@@ -79,7 +78,22 @@ func (r *PingRouter) Handle(req ziface.IRequest) {
 }
 func (r *PingRouter) PostHandle(req ziface.IRequest) {
 	fmt.Println("Call Router PostHandle")
+}
 
+//HelloZinxRouter Handle
+type HelloZinxRouter struct {
+	BaseRouter
+}
+
+func (r *HelloZinxRouter) Handle(request ziface.IRequest) {
+	fmt.Println("Call HelloZinxRouter Handle")
+	//先读取客户端的数据，再回写ping...ping...ping
+	fmt.Println("recv from client : msgId=", request.GetMsgID(), ", data=", string(request.GetData()))
+
+	err := request.GetConnection().SendMsg(1, []byte("Hello Zinx Router V0.6"))
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 //Server 模块的测试函数
@@ -89,8 +103,9 @@ func TestServer(t *testing.T) {
 		服务端测试
 	*/
 	//1 创建一个server 句柄 s
-	s := NewServer("[zinx V0.5]")
-	s.AddRoute(&PingRouter{})
+	s := NewServer("[zinx V0.6]")
+	s.AddRoute(0, &PingRouter{})
+	s.AddRoute(1, &HelloZinxRouter{})
 
 	/*
 		客户端测试
