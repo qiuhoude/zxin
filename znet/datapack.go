@@ -16,9 +16,15 @@ func NewDataPack() *DataPack {
 	return &DataPack{}
 }
 
+const (
+	dataLen = 4
+	idLen   = 4
+	headLen = dataLen + idLen
+)
+
 func (dp *DataPack) GetHeadLen() uint32 {
-	//Id uint32(4字节) +  DataLen uint32(4字节)
-	return 8
+	// DataLen uint32(4字节) + Id uint32(4字节)
+	return headLen
 }
 
 //封包方法(压缩数据)

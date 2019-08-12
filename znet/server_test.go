@@ -2,6 +2,7 @@ package znet
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"testing"
 	"time"
@@ -24,21 +25,37 @@ func ClientTest() {
 	}
 
 	for {
-		_, err := conn.Write([]byte("hello ZINX"))
+		dp := NewDataPack()
+		msg, _ := dp.Pack(NewMsgPackage(0, []byte("Zinx V0.5 Client Test Message")))
+		_, err := conn.Write(msg)
 		if err != nil {
 			fmt.Println("write error err ", err)
 			return
 		}
-
-		buf := make([]byte, 512)
-		cnt, err := conn.Read(buf)
-		if err != nil {
-			fmt.Println("read buf error ")
+		//先读出流中的head部分
+		headData := make([]byte, dp.GetHeadLen())
+		if _, err := io.ReadFull(conn, headData); err != nil {
+			fmt.Println("read head error ")
 			return
 		}
+		msgHead, err := dp.Unpack(headData)
+		if err != nil {
+			fmt.Println("server unpack err:", err)
+			return
+		}
+		if msgHead.GetDataLen() > 0 {
+			//msg 是有data数据的，需要再次读取data数据
+			msg := msgHead.(*Message)
+			msg.Data = make([]byte, msg.GetDataLen())
+			//根据dataLen从io中读取字节流
+			_, err := io.ReadFull(conn, msg.Data)
+			if err != nil {
+				fmt.Println("server unpack data err:", err)
+				return
+			}
+			fmt.Println("==> Recv Msg: ID=", msg.Id, ", len=", msg.DataLen, ", data=", string(msg.Data))
 
-		fmt.Printf(" server call back : %s, cnt = %d\n", buf, cnt)
-
+		}
 		time.Sleep(1 * time.Second)
 	}
 }
@@ -50,24 +67,19 @@ type PingRouter struct {
 
 func (r *PingRouter) PreHandle(req ziface.IRequest) {
 	fmt.Println("Call Router PreHandle")
-	_, err := req.GetConnection().GetTCPConnection().Write([]byte("before ping ....\n"))
-	if err != nil {
-		fmt.Println("call back ping ping ping error")
-	}
+
 }
 func (r *PingRouter) Handle(req ziface.IRequest) {
 	fmt.Println("Call PingRouter Handle")
-	_, err := req.GetConnection().GetTCPConnection().Write([]byte("ping...ping...ping\n"))
-	if err != nil {
-		fmt.Println("call back ping ping ping error")
-	}
+	//先读取客户端的数据，再回写ping...ping...ping
+	fmt.Println("recv from client : msgId=", req.GetMsgID(), ", data=", string(req.GetData()))
+
+	req.GetConnection().SendMsg(1, []byte("ping...ping...ping"))
+
 }
 func (r *PingRouter) PostHandle(req ziface.IRequest) {
 	fmt.Println("Call Router PostHandle")
-	_, err := req.GetConnection().GetTCPConnection().Write([]byte("After ping .....\n"))
-	if err != nil {
-		fmt.Println("call back ping ping ping error")
-	}
+
 }
 
 //Server 模块的测试函数
@@ -77,7 +89,7 @@ func TestServer(t *testing.T) {
 		服务端测试
 	*/
 	//1 创建一个server 句柄 s
-	s := NewServer("[zinx V0.1]")
+	s := NewServer("[zinx V0.5]")
 	s.AddRoute(&PingRouter{})
 
 	/*

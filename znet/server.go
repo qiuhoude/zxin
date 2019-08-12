@@ -43,7 +43,7 @@ func (s *Server) Start() {
 		}
 
 		//2 监听服务器地址
-		listenner, err := net.ListenTCP(s.IPVersion, addr)
+		listener, err := net.ListenTCP(s.IPVersion, addr)
 		if err != nil {
 			fmt.Println("listen", s.IPVersion, "err", err)
 			return
@@ -57,7 +57,7 @@ func (s *Server) Start() {
 		//3 启动server网络连接业务
 		for {
 			//3.1 阻塞等待客户端建立连接请求
-			conn, err := listenner.AcceptTCP()
+			conn, err := listener.AcceptTCP()
 			if err != nil {
 				fmt.Println("Accept err ", err)
 				continue

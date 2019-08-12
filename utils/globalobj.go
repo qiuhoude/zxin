@@ -15,7 +15,7 @@ type GlobalObj struct {
 	Host      string         //当前服务器主机IP
 	TcpPort   int            `json:"TcpPort"` //当前服务器主机监听端口号
 	Name      string         `json:"Name"`    //当前服务器名称
-	Version   string         //当前服务器主机监听端口号
+	Version   string
 
 	MaxPacketSize uint32 //数据包的最大值
 	MaxConn       int    `json:"MaxConn"` //当前服务器主机允许的最大链接个数
@@ -46,7 +46,7 @@ func init() {
 	//初始化GlobalObject变量，设置一些默认值
 	GlobalObject = &GlobalObj{
 		Name:          "ZinxServerApp",
-		Version:       "V0.4",
+		Version:       "V0.5",
 		TcpPort:       7777,
 		Host:          "0.0.0.0",
 		MaxConn:       12000,
