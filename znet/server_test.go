@@ -99,6 +99,8 @@ func (r *HelloZinxRouter) Handle(request ziface.IRequest) {
 //创建连接的时候执行
 func DoConnectionBegin(conn ziface.IConnection) {
 	fmt.Println("DoConnecionBegin is Called ... ")
+	conn.SetProperty("playerId", "110")
+
 	err := conn.SendMsg(2, []byte("DoConnection BEGIN..."))
 	if err != nil {
 		fmt.Println(err)
@@ -107,6 +109,10 @@ func DoConnectionBegin(conn ziface.IConnection) {
 
 //连接断开的时候执行
 func DoConnectionLost(conn ziface.IConnection) {
+	if playerId, err := conn.GetProperty("playerId"); err == nil {
+		fmt.Println("Conn Property playerId = ", playerId)
+	}
+
 	fmt.Println("DoConneciotnLost is Called ... ")
 }
 
@@ -124,10 +130,12 @@ func TestServer(t *testing.T) {
 	s.SetOnConnStart(DoConnectionBegin)
 	s.SetOnConnStop(DoConnectionLost)
 
-	//客户端测试
-	go ClientTest()
-
 	//2 开启服务
 	s.Serve()
 
+}
+
+func TestClient(t *testing.T) {
+	//客户端测试
+	ClientTest()
 }

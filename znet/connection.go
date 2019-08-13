@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"sync"
 	"zinx/utils"
 	"zinx/ziface"
 )
@@ -26,6 +27,10 @@ type Connection struct {
 	msgChan chan []byte
 	//带缓冲管道，用于读、写两个goroutine之间的消息通信
 	msgBuffChan chan []byte
+	// 链接属性
+	property map[string]interface{}
+	// 保护链接属性修改的锁
+	propertyLock sync.RWMutex
 }
 
 func NewConnection(server ziface.IServer, conn *net.TCPConn, connID uint32, msgHandler ziface.IMsgHandle) *Connection {
@@ -38,6 +43,7 @@ func NewConnection(server ziface.IServer, conn *net.TCPConn, connID uint32, msgH
 		ExitBuffChan: make(chan bool, 1),
 		msgChan:      make(chan []byte),
 		msgBuffChan:  make(chan []byte, utils.GlobalObject.MaxMsgChanLen),
+		property:     make(map[string]interface{}),
 	}
 	// 添加连接都connMgr中
 	c.TcpServer.GetConnMgr().Add(c)
@@ -113,15 +119,13 @@ func (c *Connection) StartReader() {
 		headData := make([]byte, dp.GetHeadLen())
 		if _, err := io.ReadFull(c.GetTCPConnection(), headData); err != nil {
 			fmt.Println("read msg head error ", err)
-			c.ExitBuffChan <- true
-			continue
+			break
 		}
 		//拆包，得到msgid 和 datalen 放在msg中
 		msg, err := dp.Unpack(headData)
 		if err != nil {
 			fmt.Println("unpack error ", err)
-			c.ExitBuffChan <- true
-			continue
+			break
 		}
 
 		//根据 dataLen 读取 data，放在msg.Data中
@@ -130,8 +134,7 @@ func (c *Connection) StartReader() {
 			data = make([]byte, msg.GetDataLen())
 			if _, err := io.ReadFull(c.GetTCPConnection(), data); err != nil {
 				fmt.Println("read msg data error ", err)
-				c.ExitBuffChan <- true
-				continue
+				break
 			}
 		}
 		msg.SetData(data)
@@ -211,4 +214,27 @@ func (c *Connection) SendBuffMsg(msgId uint32, data []byte) error {
 	// 回写客户端
 	c.msgBuffChan <- msg
 	return nil
+}
+
+func (c *Connection) SetProperty(key string, value interface{}) {
+	c.propertyLock.Lock()
+	defer c.propertyLock.Unlock()
+	c.property[key] = value
+}
+
+func (c *Connection) GetProperty(key string) (interface{}, error) {
+	c.propertyLock.RLock()
+	defer c.propertyLock.RUnlock()
+	if value, ok := c.property[key]; ok {
+		return value, nil
+	} else {
+		return nil, errors.New("no property found")
+	}
+}
+
+func (c *Connection) RemoveProperty(key string) {
+	c.propertyLock.Lock()
+	defer c.propertyLock.Unlock()
+
+	delete(c.property, key)
 }

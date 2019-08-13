@@ -18,6 +18,13 @@ type IConnection interface {
 	SendMsg(uint32, []byte) error
 	//直接将Message数据发送给远程的TCP客户端(有缓冲)
 	SendBuffMsg(uint32, []byte) error
+
+	// 连接属性设置 ,类似于netty中 channel.attr
+	SetProperty(key string, value interface{})
+	//获取链接属性
+	GetProperty(key string) (interface{}, error)
+	//移除链接属性
+	RemoveProperty(key string)
 }
 
 //定义一个统一处理链接业务的接口 int表示读到的大小
