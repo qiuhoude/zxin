@@ -15,10 +15,14 @@ type GlobalObj struct {
 	Host      string         //当前服务器主机IP
 	TcpPort   int            `json:"TcpPort"` //当前服务器主机监听端口号
 	Name      string         `json:"Name"`    //当前服务器名称
-	Version   string
 
-	MaxPacketSize uint32 //数据包的最大值
-	MaxConn       int    `json:"MaxConn"` //当前服务器主机允许的最大链接个数
+	Version          string
+	MaxPacketSize    uint32 //数据包的最大值
+	MaxConn          int    `json:"MaxConn"`        //当前服务器主机允许的最大链接个数
+	WorkerPoolSize   uint32 `json:"WorkerPoolSize"` // 业务工作Worker池的数量
+	MaxWorkerTaskLen uint32 //业务工作Worker对应负责的任务队列最大任务存储数量
+
+	ConfFilePath string // 配置的路径
 }
 
 /*
@@ -27,7 +31,7 @@ type GlobalObj struct {
 var GlobalObject *GlobalObj
 
 func (g GlobalObj) Reload() {
-	data, err := ioutil.ReadFile("conf/zinx.json")
+	data, err := ioutil.ReadFile(g.ConfFilePath)
 	if err != nil {
 		panic(err)
 	}
@@ -45,12 +49,16 @@ func (g GlobalObj) Reload() {
 func init() {
 	//初始化GlobalObject变量，设置一些默认值
 	GlobalObject = &GlobalObj{
-		Name:          "ZinxServerApp",
-		Version:       "V0.5",
-		TcpPort:       7777,
-		Host:          "0.0.0.0",
-		MaxConn:       12000,
-		MaxPacketSize: 4096,
+		Name:             "ZinxServerApp",
+		Version:          "V0.8",
+		TcpPort:          7777,
+		Host:             "0.0.0.0",
+		MaxConn:          12000,
+		MaxPacketSize:    4096,
+		WorkerPoolSize:   10,
+		MaxWorkerTaskLen: 1024,
+
+		ConfFilePath: "conf/zinx.json",
 	}
 
 	//从配置文件中加载一些用户配置的参数

@@ -103,7 +103,7 @@ func TestServer(t *testing.T) {
 		服务端测试
 	*/
 	//1 创建一个server 句柄 s
-	s := NewServer("[zinx V0.6]")
+	s := NewServer("[zinx V0.8]")
 	s.AddRoute(0, &PingRouter{})
 	s.AddRoute(1, &HelloZinxRouter{})
 

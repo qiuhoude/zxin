@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"zinx/utils"
 	"zinx/ziface"
 )
 
@@ -96,13 +97,17 @@ func (c *Connection) StartReader() {
 	defer c.Stop()
 
 	for {
+		// 创建拆包解包的对象
 		dp := NewDataPack()
+
+		//读取客户端的Msg head
 		headData := make([]byte, dp.GetHeadLen())
 		if _, err := io.ReadFull(c.GetTCPConnection(), headData); err != nil {
 			fmt.Println("read msg head error ", err)
 			c.ExitBuffChan <- true
 			continue
 		}
+		//拆包，得到msgid 和 datalen 放在msg中
 		msg, err := dp.Unpack(headData)
 		if err != nil {
 			fmt.Println("unpack error ", err)
@@ -122,13 +127,18 @@ func (c *Connection) StartReader() {
 		}
 		msg.SetData(data)
 
+		//得到当前客户端请求的Request数据
 		req := Request{
 			conn: c,
 			msg:  msg,
 		}
-
-		//从绑定好的消息和对应的处理方法中执行对应的Handle方法
-		go c.MsgHandler.DoMsgHandler(&req)
+		if utils.GlobalObject.WorkerPoolSize > 0 {
+			//已经启动工作池机制，将消息交给Worker处理
+			c.MsgHandler.SendMsgToTaskQueue(&req)
+		} else {
+			//从绑定好的消息和对应的处理方法中执行对应的Handle方法
+			go c.MsgHandler.DoMsgHandler(&req)
+		}
 	}
 }
 
