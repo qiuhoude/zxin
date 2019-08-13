@@ -21,6 +21,7 @@ type GlobalObj struct {
 	MaxConn          int    `json:"MaxConn"`        //当前服务器主机允许的最大链接个数
 	WorkerPoolSize   uint32 `json:"WorkerPoolSize"` // 业务工作Worker池的数量
 	MaxWorkerTaskLen uint32 //业务工作Worker对应负责的任务队列最大任务存储数量
+	MaxMsgChanLen    int
 
 	ConfFilePath string // 配置的路径
 }
@@ -57,6 +58,7 @@ func init() {
 		MaxPacketSize:    4096,
 		WorkerPoolSize:   10,
 		MaxWorkerTaskLen: 1024,
+		MaxMsgChanLen:    20,
 
 		ConfFilePath: "conf/zinx.json",
 	}

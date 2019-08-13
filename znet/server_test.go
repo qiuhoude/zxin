@@ -25,7 +25,7 @@ func ClientTest() {
 	}
 	dp := NewDataPack()
 	for {
-		msg, _ := dp.Pack(NewMsgPackage(1, []byte("Zinx V0.6 Client Test Message")))
+		msg, _ := dp.Pack(NewMsgPackage(1, []byte("Zinx V0.9 Client Test Message")))
 		_, err := conn.Write(msg)
 		if err != nil {
 			fmt.Println("write error err ", err)
@@ -90,10 +90,24 @@ func (r *HelloZinxRouter) Handle(request ziface.IRequest) {
 	//先读取客户端的数据，再回写ping...ping...ping
 	fmt.Println("recv from client : msgId=", request.GetMsgID(), ", data=", string(request.GetData()))
 
-	err := request.GetConnection().SendMsg(1, []byte("Hello Zinx Router V0.6"))
+	err := request.GetConnection().SendMsg(1, []byte("Hello Zinx Router V0.9"))
 	if err != nil {
 		fmt.Println(err)
 	}
+}
+
+//创建连接的时候执行
+func DoConnectionBegin(conn ziface.IConnection) {
+	fmt.Println("DoConnecionBegin is Called ... ")
+	err := conn.SendMsg(2, []byte("DoConnection BEGIN..."))
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+//连接断开的时候执行
+func DoConnectionLost(conn ziface.IConnection) {
+	fmt.Println("DoConneciotnLost is Called ... ")
 }
 
 //Server 模块的测试函数
@@ -103,13 +117,14 @@ func TestServer(t *testing.T) {
 		服务端测试
 	*/
 	//1 创建一个server 句柄 s
-	s := NewServer("[zinx V0.8]")
+	s := NewServer("[zinx V0.9]")
 	s.AddRoute(0, &PingRouter{})
 	s.AddRoute(1, &HelloZinxRouter{})
+	//注册链接hook回调函数
+	s.SetOnConnStart(DoConnectionBegin)
+	s.SetOnConnStop(DoConnectionLost)
 
-	/*
-		客户端测试
-	*/
+	//客户端测试
 	go ClientTest()
 
 	//2 开启服务

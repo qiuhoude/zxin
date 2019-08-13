@@ -16,6 +16,8 @@ type IConnection interface {
 	RemoteAddr() net.Addr
 	//直接将Message数据发送数据给远程的TCP客户端
 	SendMsg(uint32, []byte) error
+	//直接将Message数据发送给远程的TCP客户端(有缓冲)
+	SendBuffMsg(uint32, []byte) error
 }
 
 //定义一个统一处理链接业务的接口 int表示读到的大小
