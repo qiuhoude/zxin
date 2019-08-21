@@ -31,7 +31,7 @@ type Server struct {
 /*
   创建一个服务器句柄
 */
-func NewServer(name string) ziface.IServer {
+func NewServer() ziface.IServer {
 	//先初始化全局配置文件
 	utils.GlobalObject.Reload()
 
@@ -124,7 +124,7 @@ func (s *Server) Serve() {
 }
 
 //路由功能：给当前服务注册一个路由业务方法，供客户端链接处理使用
-func (s *Server) AddRoute(msgId uint32, router ziface.IRouter) {
+func (s *Server) AddRouter(msgId uint32, router ziface.IRouter) {
 	s.msgHandler.AddRouter(msgId, router)
 
 }
